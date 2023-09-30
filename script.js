@@ -49,19 +49,21 @@ var gameControl = (function (gameBoard) {
   function playRound(row, column) {
     if (gameBoard.placeMarker(row, column, _activePlayer.getToken())) {
       _cells -= 1;
-      _switchPlayer();
       if (_checkWin(gameBoard.getBoard())) {
         _gameStatus.gameOver = true;
         _gameStatus.winner = _activePlayer;
+        _switchPlayer();
         return _gameStatus;
       }
       else if (_cells === 0) {
         _gameStatus.gameOver = true;
         _gameStatus.tie = true;
+        _switchPlayer();
         return _gameStatus;
       }
-      return _gameStatus;
+      _switchPlayer();
     }
+    return _gameStatus;
   }
   function _checkWin(board) {
     //checks for horizontal or vertical matches
@@ -91,7 +93,7 @@ function displayBoard(board) {
       let button = document.createElement('button');
       button.dataset.row = row;
       button.dataset.column = column;
-      button.addEventListener('click',placeMarker)
+      button.addEventListener('click', placeMarker)
       boardContainer.append(button);
     }
   }
@@ -99,8 +101,19 @@ function displayBoard(board) {
 function placeMarker(e) {
   const row = Number(e.target.dataset.row);
   const column = Number(e.target.dataset.column);
-  let gameStatus = gameControl.playRound(row,column);
+  let gameStatus = gameControl.playRound(row, column);
   e.target.textContent = gameBoard.getBoard()[row][column];
+  if (gameStatus.gameOver) {
+    displayGameStatus(gameStatus);
+  }
 }
-
+function displayGameStatus(gameStatus) {
+  let gameStatusElement = document.querySelector('.gameStatus');
+  if (gameStatus.winner !== null) {
+    gameStatusElement.textContent = `${gameStatus.winner.getName()} has won the Game`;
+  }
+  else {
+    gameStatusElement.textContent = "The game is a tie";
+  }
+}
 displayBoard(gameBoard.getBoard())
