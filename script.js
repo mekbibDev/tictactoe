@@ -4,7 +4,7 @@ var gameBoard = (function () {
 
   var getBoard = () => _board;
 
-  var setToken = (row, column, token) => {
+  var placeMarker = (row, column, token) => {
     if (_board[row][column] === undefined) {
       _board[row][column] = token;
       return true;
@@ -27,7 +27,7 @@ var gameBoard = (function () {
     }
     return board;
   }
-  return { getBoard, setToken, resetBoard };
+  return { getBoard, placeMarker, resetBoard };
 })();
 
 function Player(name, token) {
@@ -39,12 +39,29 @@ function Player(name, token) {
 
 var gameControl = (function (gameBoard) {
   var _players = [Player('mekbib', 'X'), Player('daniel', 'O')];
-  const _cells = 9;
+  var _cells = 9;
   var _activePlayer = _players[0];
-
-  function _playRound(activePlayer) {
-
-    return gameBoard.setToken(window.prompt('input row'), window.prompt('input column'), activePlayer.getToken());
+  var _gameStatus = {
+    gameOver: false,
+    tie: false,
+    winner: null,
+  }
+  function playRound(row, column) {
+    if (gameBoard.placeMarker(row, column, _activePlayer.getToken())) {
+      _cells -= 1;
+      _switchPlayer();
+      if (_checkWin(gameBoard.getBoard())) {
+        _gameStatus.gameOver = true;
+        _gameStatus.winner = _activePlayer;
+        return _gameStatus;
+      }
+      else if (_cells === 0) {
+        _gameStatus.gameOver = true;
+        _gameStatus.tie = true;
+        return _gameStatus;
+      }
+      return _gameStatus;
+    }
   }
   function _checkWin(board) {
     //checks for horizontal or vertical matches
@@ -60,28 +77,30 @@ var gameControl = (function (gameBoard) {
       return true;
     return false;
   }
-  function startGame() {
-
-    let i = _cells;
-    while (i > 0) {
-      if (_playRound(_activePlayer)) {
-        const gameOver = _checkWin(gameBoard.getBoard());
-        if (gameOver !== false) {
-          let winner = _activePlayer;
-
-          break;
-        }
-        _activePlayer = _activePlayer === _players[0] ? _players[1] : _players[0];
-        i = i - 1;
-      }
-
-    }
-    gameBoard.resetBoard();
+  function _switchPlayer() {
+    _activePlayer = _activePlayer === _players[0] ? _players[1] : _players[0];
   }
 
-  return { startGame };
+  return { playRound };
 })(gameBoard);
 
+function displayBoard(board) {
+  var boardContainer = document.querySelector('.board');
+  for (let row in board) {
+    for (column in board[row]) {
+      let button = document.createElement('button');
+      button.dataset.row = row;
+      button.dataset.column = column;
+      button.addEventListener('click',placeMarker)
+      boardContainer.append(button);
+    }
+  }
+}
+function placeMarker(e) {
+  const row = Number(e.target.dataset.row);
+  const column = Number(e.target.dataset.column);
+  let gameStatus = gameControl.playRound(row,column);
+  e.target.textContent = gameBoard.getBoard()[row][column];
+}
 
-
-gameControl.startGame();
+displayBoard(gameBoard.getBoard())
