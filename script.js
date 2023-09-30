@@ -53,12 +53,14 @@ var gameControl = (function (gameBoard) {
         _gameStatus.gameOver = true;
         _gameStatus.winner = _activePlayer;
         _switchPlayer();
+        // resetGame();
         return _gameStatus;
       }
       else if (_cells === 0) {
         _gameStatus.gameOver = true;
         _gameStatus.tie = true;
         _switchPlayer();
+        // resetGame();
         return _gameStatus;
       }
       _switchPlayer();
@@ -82,12 +84,22 @@ var gameControl = (function (gameBoard) {
   function _switchPlayer() {
     _activePlayer = _activePlayer === _players[0] ? _players[1] : _players[0];
   }
-
-  return { playRound };
+  function resetGame() {
+    _cells = 9;
+    _gameStatus = {
+      gameOver: false,
+      tie: false,
+      winner: null,
+    }
+    gameBoard.resetBoard();
+  }
+  return { playRound,resetGame };
 })(gameBoard);
 
 function displayBoard(board) {
   var boardContainer = document.querySelector('.board');
+  boardContainer.textContent = '';
+  var resetButton = document.createElement('button');
   for (let row in board) {
     for (column in board[row]) {
       let button = document.createElement('button');
@@ -97,6 +109,10 @@ function displayBoard(board) {
       boardContainer.append(button);
     }
   }
+
+  resetButton.textContent = 'Reset';
+  resetButton.addEventListener('click',resetGame);
+  boardContainer.append(resetButton);
 }
 function placeMarker(e) {
   const row = Number(e.target.dataset.row);
@@ -109,11 +125,21 @@ function placeMarker(e) {
 }
 function displayGameStatus(gameStatus) {
   let gameStatusElement = document.querySelector('.gameStatus');
+  let buttons = document.querySelectorAll('button');
+  buttons.forEach(button => {
+    button.removeEventListener('click',placeMarker);
+  })
   if (gameStatus.winner !== null) {
     gameStatusElement.textContent = `${gameStatus.winner.getName()} has won the Game`;
   }
   else {
     gameStatusElement.textContent = "The game is a tie";
   }
+}
+function resetGame(){
+  gameControl.resetGame();
+  let gameStatusElement = document.querySelector('.gameStatus');
+  gameStatusElement.textContent = '';
+  displayBoard(gameBoard.getBoard());
 }
 displayBoard(gameBoard.getBoard())
