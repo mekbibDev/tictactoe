@@ -1,18 +1,20 @@
-var gameBoard = (function () {
+function gameBoard() {
 
   var _board = _createBoard();
 
   var getBoard = () => _board;
 
-  var placeMarker = (row, column, token) => {
-    if (_board[row][column] === undefined) {
-      _board[row][column] = token;
+  var placeMarker = (row, column, marker) => {
+    if (_board[row][column] === null) {
+      _board[row][column] = marker;
       return true;
     }
     else
       return false;
   }
-
+  var setBoard = (board) => {
+    _board = board;
+  }
   var resetBoard = () => {
     _board = _createBoard();
   };
@@ -23,22 +25,107 @@ var gameBoard = (function () {
     var board = Array(row).fill([]);
 
     for (let i = 0; i < column; i++) {
-      board[i] = Array(column).fill();
+      board[i] = Array(column).fill(null);
     }
     return board;
   }
-  return { getBoard, placeMarker, resetBoard };
-})();
-
-function Player(name, token) {
-  var getName = () => name;
-  var getToken = () => token;
-
-  return { getName, getToken };
+  return { getBoard, placeMarker, resetBoard, setBoard };
 }
 
-var gameControl = (function (gameBoard) {
-  var _players = [Player('mekbib', 'X'), Player('daniel', 'O')];
+function player(name, marker) {
+  var getName = () => name;
+  var getMarker = () => marker;
+
+  return { getName, getMarker };
+}
+
+
+function computer(name, marker) {
+  var getName = () => name;
+  var getMarker = () => marker;
+  var markers = ['O', 'X'];
+  var _currentMarker = markers[0];
+  var isBot = true;
+
+  var _switchCurrentMarker = () => _currentMarker === 'O' ? _currentMarker = 'X' : _currentMarker = 'O';
+  function chooseCell() {
+    if(gameController.getCells() === 9){
+      let row = Math.floor(Math.random() * 3);
+      let column = Math.floor(Math.random() * 3) ;
+      let state = {row,column, points:0};
+      
+      return state;
+    }
+    var state = _chooseState(JSON.parse(JSON.stringify(gameController.gameBoard.getBoard())), gameController.getCells());
+    return state;
+  }
+  function _chooseState(currentBoard, cells) {
+
+    var states = [];
+    var gameBoardTemp = gameBoard();
+
+    gameBoardTemp.setBoard(JSON.parse(JSON.stringify(currentBoard)));
+
+    for (const row in gameBoardTemp.getBoard()) {
+      for (const column in gameBoardTemp.getBoard()[row]) {
+        if (gameBoardTemp.getBoard()[row][column] === null) {
+          let calculatedPoints = _calculatePoints(row, column, gameBoardTemp, cells);
+          states.push({ row, column, points: calculatedPoints });
+        }
+
+      }
+    }
+    let state = states.toSorted((a, b) => a.points - b.points)[states.length - 1];
+    console.log('in choose state');
+    console.log(states);
+    return state;
+
+  }
+  function _calculatePoints(row, column, gameBoardTemp, cells, marker = 'O', depth = 0) {
+    var gameBoardTempTwo = gameBoard();
+    var boardCopy = JSON.parse(JSON.stringify(gameBoardTemp.getBoard()))
+    gameBoardTempTwo.setBoard(boardCopy);
+    gameBoardTempTwo.placeMarker(row, column, marker);
+    boardCopy = JSON.parse(JSON.stringify(gameBoardTempTwo.getBoard()))
+
+    cells -= 1;
+    if (typeof (gameController.checkWin(gameBoardTempTwo.getBoard())) === 'string') {
+      if (gameController.checkWin(gameBoardTempTwo.getBoard()) === 'X')
+        return depth - 10;
+      else
+        return 10 - depth;
+    }
+    else if (cells === 0) {
+      return 0;
+    }
+    depth += 1;
+    marker = marker === 'X' ? 'O' : 'X';
+    let states = [];
+    for (const row in gameBoardTempTwo.getBoard()) {
+      for (const column in gameBoardTempTwo.getBoard()[row]) {
+        if (gameBoardTempTwo.getBoard()[row][column] === null) {
+          let calculatedPoints = _calculatePoints(row, column, gameBoardTempTwo, cells, marker, depth);
+          states.push({ row, column, points: calculatedPoints });
+        }
+      }
+    }
+
+    let state = [];
+    if (marker === 'X')
+      state = states.toSorted((a, b) => a.points - b.points)[0];
+    else
+      state = states.toSorted((a, b) => a.points - b.points)[states.length - 1];
+    console.log(states);
+    return state.points;
+
+  }
+
+
+
+  return { getName, getMarker, chooseCell, isBot };
+}
+var gameController = (function (gameBoard) {
+  var _players = [player('player', 'X'), computer('Unbeatable Bot', 'O')];
   var _cells = 9;
   var _activePlayer = _players[0];
   var _gameStatus = {
@@ -46,39 +133,38 @@ var gameControl = (function (gameBoard) {
     tie: false,
     winner: null,
   }
+
   function playRound(row, column) {
-    if (gameBoard.placeMarker(row, column, _activePlayer.getToken())) {
+    if (gameBoard.placeMarker(row, column, _activePlayer.getMarker())) {
       _cells -= 1;
-      if (_checkWin(gameBoard.getBoard())) {
+      if (typeof (checkWin(gameBoard.getBoard())) === 'string') {
         _gameStatus.gameOver = true;
         _gameStatus.winner = _activePlayer;
         _switchPlayer();
-        // resetGame();
         return _gameStatus;
       }
       else if (_cells === 0) {
         _gameStatus.gameOver = true;
         _gameStatus.tie = true;
         _switchPlayer();
-        // resetGame();
         return _gameStatus;
       }
       _switchPlayer();
     }
     return _gameStatus;
   }
-  function _checkWin(board) {
+  function checkWin(board) {
     //checks for horizontal or vertical matches
     for (const i in board) {
       if (typeof (board[i][0]) === 'string' & board[i][0] === board[i][1] & board[i][0] === board[i][2])
-        return true;
+        return board[i][0];
       if (typeof (board[0][i]) === 'string' & board[0][i] === board[1][i] & board[0][i] === board[2][i])
-        return true;
+        return board[0][i];
     }
     //checks for crisscross matches
     if (typeof (board[1][1]) === 'string' & (((board[1][1] === board[0][0]) & (board[1][1] === board[2][2]))
       || ((board[1][1] === board[2][0]) & (board[1][1] === board[0][2]))))
-      return true;
+      return board[1][1];
     return false;
   }
   function _switchPlayer() {
@@ -93,8 +179,14 @@ var gameControl = (function (gameBoard) {
     }
     gameBoard.resetBoard();
   }
-  return { playRound,resetGame };
-})(gameBoard);
+  function getCells() {
+    return _cells;
+  }
+  function getActivePlayer() {
+    return _activePlayer;
+  }
+  return { playRound, resetGame, checkWin, getCells, getActivePlayer, gameBoard };
+})(gameBoard())
 
 function displayBoard(board) {
   var boardContainer = document.querySelector('.board');
@@ -111,24 +203,26 @@ function displayBoard(board) {
   }
 
   resetButton.textContent = 'Reset';
-  resetButton.addEventListener('click',resetGame);
+  resetButton.addEventListener('click', resetGame);
   boardContainer.append(resetButton);
 }
 function placeMarker(e) {
   const row = Number(e.target.dataset.row);
   const column = Number(e.target.dataset.column);
-  let gameStatus = gameControl.playRound(row, column);
-  e.target.textContent = gameBoard.getBoard()[row][column];
+  let gameStatus = gameController.playRound(row, column);
+  e.target.textContent = gameController.gameBoard.getBoard()[row][column];
   if (gameStatus.gameOver) {
     displayGameStatus(gameStatus);
   }
+  else if (gameController.getActivePlayer().isBot) {
+
+    botClick();
+  }
 }
+
 function displayGameStatus(gameStatus) {
   let gameStatusElement = document.querySelector('.gameStatus');
-  let buttons = document.querySelectorAll('button');
-  buttons.forEach(button => {
-    button.removeEventListener('click',placeMarker);
-  })
+  removeListenersFromButtons();
   if (gameStatus.winner !== null) {
     gameStatusElement.textContent = `${gameStatus.winner.getName()} has won the Game`;
   }
@@ -136,10 +230,24 @@ function displayGameStatus(gameStatus) {
     gameStatusElement.textContent = "The game is a tie";
   }
 }
-function resetGame(){
-  gameControl.resetGame();
+function resetGame() {
+  gameController.resetGame();
   let gameStatusElement = document.querySelector('.gameStatus');
   gameStatusElement.textContent = '';
-  displayBoard(gameBoard.getBoard());
+  displayBoard(gameController.gameBoard.getBoard());
+  if(gameController.getActivePlayer().isBot){
+    botClick();
+  }
 }
-displayBoard(gameBoard.getBoard())
+function removeListenersFromButtons() {
+  let buttons = document.querySelectorAll('button');
+  buttons.forEach(button => {
+    button.removeEventListener('click', placeMarker);
+  })
+}
+function botClick(){
+  var cell = gameController.getActivePlayer().chooseCell();
+  var button = document.querySelector(`button[data-row='${cell.row}'][data-column='${cell.column}']`);
+  button.click();
+}
+displayBoard(gameController.gameBoard.getBoard())
