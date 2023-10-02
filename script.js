@@ -85,8 +85,6 @@ function computer(name, marker) {
     }
 
     var state = states.toSorted((a, b) => a.points - b.points)[states.length - 1];
-    console.log('in choose state');
-    console.log(states);
 
     return state;
   }
@@ -112,24 +110,24 @@ function computer(name, marker) {
 
     depth += 1;
     marker = marker === 'X' ? 'O' : 'X';
-    var states = [];
+    var min = +Infinity;
+    var max = -Infinity;
     for (const row in gameBoardTempTwo.getBoard()) {
       for (const column in gameBoardTempTwo.getBoard()[row]) {
         if (gameBoardTempTwo.getBoard()[row][column] === null) {
           let calculatedPoints = _calculatePoints(row, column, gameBoardTempTwo, cells, marker, depth);
-          states.push({ row, column, points: calculatedPoints });
+          if (marker === 'O')
+            max = calculatedPoints > max ? calculatedPoints : max;
+          else
+            min = calculatedPoints < min ? calculatedPoints : min;
         }
       }
     }
-    var state = [];
-
-    if (marker === 'X')
-      state = states.toSorted((a, b) => a.points - b.points)[0];
+    
+    if (marker === 'O')
+      return max;
     else
-      state = states.toSorted((a, b) => a.points - b.points)[states.length - 1];
-    console.log(states);
-
-    return state.points;
+      return min;
   }
 
   return { getName, getMarker, chooseCell, isBot };
