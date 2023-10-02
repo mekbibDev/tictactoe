@@ -15,3 +15,10 @@ body {
   grid-template-columns: 50px 50px 50px;
   grid-template-rows: 50px 50px 50px;
 }
+dialog {
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 1px 2px 1px #0000003b;
+  border: none;
+  margin: auto;
+}

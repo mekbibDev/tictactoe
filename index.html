@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,21 @@
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 </head>
+
 <body>
-  <div class="container"> 
+  <dialog role="dialog" aria-modal="true" open>
+    <form action="" method="dialog">
+      <label for="name">Name:</label>
+      <input type="text" name="name" id="name" required autofocus>
+      <button id="submit" type="submit"> Submit</button>
+    </form>
+  </dialog>
+  <div class="container" inert>
     <div class="board">
-      
+
     </div>
     <p class="gameStatus"></p>
   </div>
 </body>
+
 </html>

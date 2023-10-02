@@ -1,3 +1,12 @@
+var submitButton = document.querySelector('#submit');
+var nameInput = document.querySelector('#name');
+submitButton.addEventListener('click', () => {
+  var name = nameInput.value;
+  var container = document.querySelector('.container');
+  container.inert = false;
+  gameController.getActivePlayer().setName(name);
+})
+
 function gameBoard() {
 
   var _board = _createBoard();
@@ -32,28 +41,30 @@ function gameBoard() {
   return { getBoard, placeMarker, resetBoard, setBoard };
 }
 
-function player(name, marker) {
+function player(namePassed, marker) {
+  var name = namePassed;
   var getName = () => name;
   var getMarker = () => marker;
 
-  return { getName, getMarker };
+  function setName(namePassed) {
+    name = namePassed;
+  }
+  return { getName, getMarker,setName };
 }
 
 
 function computer(name, marker) {
   var getName = () => name;
   var getMarker = () => marker;
-  var markers = ['O', 'X'];
-  var _currentMarker = markers[0];
   var isBot = true;
 
-  var _switchCurrentMarker = () => _currentMarker === 'O' ? _currentMarker = 'X' : _currentMarker = 'O';
+
   function chooseCell() {
-    if(gameController.getCells() === 9){
+    if (gameController.getCells() === 9) {
       let row = Math.floor(Math.random() * 3);
-      let column = Math.floor(Math.random() * 3) ;
-      let state = {row,column, points:0};
-      
+      let column = Math.floor(Math.random() * 3);
+      let state = { row, column, points: 0 };
+
       return state;
     }
     var state = _chooseState(JSON.parse(JSON.stringify(gameController.gameBoard.getBoard())), gameController.getCells());
@@ -235,7 +246,7 @@ function resetGame() {
   let gameStatusElement = document.querySelector('.gameStatus');
   gameStatusElement.textContent = '';
   displayBoard(gameController.gameBoard.getBoard());
-  if(gameController.getActivePlayer().isBot){
+  if (gameController.getActivePlayer().isBot) {
     botClick();
   }
 }
@@ -245,7 +256,7 @@ function removeListenersFromButtons() {
     button.removeEventListener('click', placeMarker);
   })
 }
-function botClick(){
+function botClick() {
   var cell = gameController.getActivePlayer().chooseCell();
   var button = document.querySelector(`button[data-row='${cell.row}'][data-column='${cell.column}']`);
   button.click();
